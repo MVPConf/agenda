@@ -1,0 +1,23 @@
+﻿.tab-control {
+    width: 100%;
+}
+
+    .tab-control .tab-group .tab-button,
+    .tab-control .tab-group .tab-button:focus {
+        color: #fff;
+        border: none;
+        margin-right: 5px;
+        padding: 5px 15px;
+        border-radius: 0;
+        outline: none;
+        cursor: pointer;
+    }
+
+        .tab-control .tab-group .tab-button.inactive {
+            background: rgba(82, 12, 26, 0.5);
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .tab-control .tab-group .tab-button.active {
+            background: rgba(240, 47, 55, 0.6);
+        }

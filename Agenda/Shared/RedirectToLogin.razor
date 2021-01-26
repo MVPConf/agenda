@@ -1,0 +1,9 @@
+﻿@inject NavigationManager Navigation
+@inject ConfigurationService Configuration
+
+@code {
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo(Configuration.GetLoginUrl());
+    }
+}

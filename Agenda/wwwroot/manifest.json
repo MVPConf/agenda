@@ -1,0 +1,15 @@
+{
+  "name": "Agenda",
+  "short_name": "Agenda",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#03173d",
+  "icons": [
+    {
+      "src": "/images/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "152x152"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+﻿<div class="winner-container">
+    <h1>Parabéns! Você foi um dos ganhadores do sorteio de um <br/>Xbox One S no <span>MVPConf 2020</span>!</h1>
+
+    <h3>Em breve a coordenação entrará em contato com você!</h3>
+
+    <img src="/images/xboxones.png" />
+
+    <button @onclick="Cancel" class="btn btn-secondary" style="float: right;">Fechar</button>
+</div>
+
+@code {
+    [CascadingParameter]
+    BlazoredModalInstance BlazoredModal { get; set; }
+
+    void Cancel()
+    {
+        BlazoredModal.Cancel();
+    }
+}
+    

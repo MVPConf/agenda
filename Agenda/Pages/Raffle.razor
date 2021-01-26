@@ -1,0 +1,111 @@
+﻿@page "/raffle"
+@using Agenda.Features.Authentication
+@using BlazorState
+
+@inject NavigationManager Navigation
+@inject HttpClient HttpClient
+
+@inherits BlazorStateComponent
+
+@attribute [Authorize]
+
+<div>
+    <h1>Sorteio</h1>
+    <div class="raffle-area">
+        <div class="filter">
+            <label for="date">Data</label>
+            <select id="date" @onchange="DateFilterChanged">
+                @foreach (string date in FilteredDates())
+                {
+                    <option value="@date" selected="@(date == SelectedDate)">@date.ToUpper()</option>
+                }
+            </select>
+        </div>
+        <div class="raffle-result">
+            <h2>Nome: @(string.IsNullOrWhiteSpace(User.FullName) ? "Sorteie um participante!" : User.FullName)</h2>
+        </div>
+        <div class="raffle-button">
+            @if (!Raffling)
+            {
+                <button class="btn-raffle" @onclick="DoRaffle">Sortear</button>
+            }
+            else
+            {
+                <p class="raffling">Sorteando...</p>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    AuthState AuthState => GetState<AuthState>();
+
+    String SelectedDate = "10/12/2020";
+
+    UserRaffle User = new UserRaffle("", "", "", "");
+
+    List<UserRaffle> Users = new List<UserRaffle>();
+
+    bool Raffling = false;
+
+    protected override void OnInitialized()
+    {
+        if (!isAdmin())
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private bool isAdmin()
+    {
+        return "admin".Equals(AuthState.Role, StringComparison.InvariantCultureIgnoreCase);
+    }
+
+    private async Task DateFilterChanged(ChangeEventArgs e)
+    {
+        SelectedDate = e.Value.ToString();
+        StateHasChanged();
+    }
+
+    private List<string> FilteredDates()
+    {
+        return new List<string>()
+        {
+            "10/12/2020",
+            "11/12/2020",
+            "12/12/2020"
+        };
+    }
+
+    private async Task DoRaffle()
+    {
+        Raffling = true;
+        DateTime date = DateTime.ParseExact(SelectedDate, "dd/MM/yyyy", null);
+        Users = await HttpClient.GetFromJsonAsync<List<UserRaffle>>($"raffle/listUsersByDate/{date.ToString("yyyyMMdd")}");
+
+        RandomRaffle();
+    }
+
+    private async Task RandomRaffle()
+    {
+
+        int total = Users.Count();
+        int limit = total < 150 ? total : 150;
+
+        Random rnd = new Random();
+
+        for (int i = 0; i < limit; i++)
+        {
+            User = Users.ElementAt(rnd.Next(total - 1));
+            StateHasChanged();
+            await Task.Delay(50);
+        }
+
+        await HttpClient.PostAsJsonAsync<UserRaffle>("raffle/winner", User);
+        Users = Users.Where(u => u.UserHash != User.UserHash).ToList();
+
+        Raffling = false;
+        StateHasChanged();
+        await Task.Delay(1);
+    }
+}

@@ -1,0 +1,164 @@
+﻿@using Agenda.Features.Schedule
+@using Agenda.Features.Speeches
+@using Agenda.Components.ScheduleModal
+
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@inject IModalService Modal
+
+@inherits BlazorStateComponent
+
+@if (SpeechState.Loading || ScheduleState.Loading)
+{
+    <h1>Carregando</h1>
+}
+else
+{
+    <div class="speech-title">
+        <h1>@Speech.Title</h1>
+    </div>
+    <div class="speech-description">
+        <div class="speakers">
+            @foreach (var speaker in Speech.Speakers)
+            {
+                var imgUrl = $"https://mvpconfstorage.blob.core.windows.net/agenda-fotos/{speaker.Replace(" ", "")}.jpg";
+                <div class="speaker-picture" style="background-image: url('@imgUrl');">
+                    <p>@speaker</p>
+                </div>
+            }
+        </div>
+        <div class="description">
+            <h3>@Speech.Schedule</h3>
+            <p>@Speech.Description</p>
+        </div>
+    </div>
+    <div class="speech-controls">
+        @if (IsSpeechInSchedule())
+        {
+            <div class="control">
+                <button class="btn-play" @onclick="Watch">Assistir</button>
+            </div>
+            @if (!Speech?.Title?.Contains("[KeyNote]") ?? false)
+            {
+                <div class="control">
+                    <button class="btn-remove" @onclick="Remove">Remover</button>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="control">
+                <button class="btn-remove" @onclick="Schedule">Agendar</button>
+            </div>
+        }
+        @*@if (!Speech?.Title?.Contains("[KeyNote]") ?? false)
+        {
+
+            <div class="control">
+                <p>Inscritos: @Speech.Scheduled</p>
+            </div>
+        }*@
+    </div>
+}
+
+@code {
+    ScheduleState ScheduleState => GetState<ScheduleState>();
+
+    SpeechState SpeechState => GetState<SpeechState>();
+
+    Speech Speech = new Speech();
+
+    [Parameter]
+    public int SpeechId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!SpeechState.Speeches.Any(s => s.Id == SpeechId))
+        {
+            await Task.WhenAll(FetchUserSchedule(), FetchSpeeches());
+        }
+
+        Speech = GetSpeech();
+    }
+
+    private async Task FetchUserSchedule()
+    {
+        await Mediator.Send(new ScheduleState.FetchUserScheduleAction());
+    }
+
+    private async Task FetchSpeeches()
+    {
+        await Mediator.Send(new SpeechState.FetchSpeechesAction());
+    }
+
+    private Speech GetSpeech()
+    {
+        return SpeechState.Speeches.FirstOrDefault(s => s.Id == SpeechId);
+    }
+
+    private bool IsSpeechInSchedule()
+    {
+        return ScheduleState.Schedule.Slots.Any(s => s.Speech != null && s.Speech.Id == SpeechId);
+    }
+
+    private bool IsSpeechWithTimeScheduled()
+    {
+        var speech = GetSpeech();
+        return ScheduleState.Schedule.Slots.Any(s => s.Time.ToString("dd/MM/yyyy HH':'mm") == speech.Schedule && s.Speech != null);
+    }
+
+    private async Task Watch()
+    {
+        var speech = GetSpeech();
+        var scheduleTime = DateTime.ParseExact(speech.Schedule, "dd/MM/yyyy HH':'mm", null);
+        var url = string.IsNullOrWhiteSpace(speech.LinkUrl) ? speech.JoinUrl : speech.LinkUrl;
+
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            await JSRuntime.InvokeVoidAsync("open", url, "_blank");
+        }
+        else if (DateTime.Now < scheduleTime.AddMinutes(-5) && string.IsNullOrWhiteSpace(speech.LinkUrl))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Ainda faltam alguns minutos para o início desta palestra. Por favor aguard até 5 minutos antes do horário agendado.");
+        }
+        else if (DateTime.Now > scheduleTime.AddHours(1) && string.IsNullOrWhiteSpace(speech.LinkUrl))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "A gravação desta palestra ainda não está disponível e será liberada em breve, caso seu ingresso tenha acesso a gravações.");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "URL de visualização não cadastrada. Por favor, informa para a organização do evento.");
+        }
+    }
+
+    private async Task Remove()
+    {
+        await Mediator.Send(new ScheduleState.RemoveScheduleAction(SpeechId));
+        NavManager.NavigateTo("/schedule");
+    }
+
+    private async Task Schedule()
+    {
+        if (IsSpeechWithTimeScheduled())
+        {
+            var modalRef = Modal.Show<ScheduleModal>("Confirmação", new ModalOptions()
+            {
+                Animation = ModalAnimation.FadeInOut(0.5),
+                HideCloseButton = true
+            });
+
+            var result = await modalRef.Result;
+
+            if (!result.Cancelled)
+            {
+                await Mediator.Send(new ScheduleState.ScheduleSpeechAction(SpeechId));
+                NavManager.NavigateTo("/schedule");
+            }
+        }
+        else
+        {
+            await Mediator.Send(new ScheduleState.ScheduleSpeechAction(SpeechId));
+            NavManager.NavigateTo("/schedule");
+        }
+    }
+}

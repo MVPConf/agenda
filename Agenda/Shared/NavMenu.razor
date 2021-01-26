@@ -1,0 +1,85 @@
+﻿@using Agenda.Features.Authentication
+@using BlazorState
+
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+@inject ConfigurationService Configuration
+
+@inherits BlazorStateComponent
+
+<div class="nav-menu">
+    <nav>
+        @if (AuthState.LoggedIn)
+        {
+            <NavLink href="/">
+                <div class="logo">
+                    <img src="/images/logomvp.jpg" alt="Logo MVP">
+                </div>
+            </NavLink>
+            <div class="hamburger @_hamburgerClass" @onclick="ToggleMenu">
+                <div class="line1"></div>
+                <div class="line2"></div>
+                <div class="line3"></div>
+            </div>
+            <ul class="nav-links @_navLinksClass">
+                <li class="@_linksClass"><NavLink href="/schedule" @onclick="CloseMenu">Minha agenda</NavLink></li>
+                <li class="@_linksClass"><NavLink href="/speeches" @onclick="CloseMenu">Grade completa</NavLink></li>
+                @if (IsAdmin())
+                {
+                    <li class="@_linksClass"><NavLink href="/raffle" @onclick="CloseMenu">Sorteio</NavLink></li>
+                }
+                <li class="@_linksClass"><NavLink href="" @onclick="Logout">Logout</NavLink></li>
+                <li class="@_linksClass">
+                    <NavLink href="https://www.linkedin.com/in/gbbigardi/" target="_blank" style="font-size: 12px; display: flex; align-items: center;"
+                             @onclick="CloseMenu">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 34 34" class="global-nav__logo" style="margin-right: 10px;">
+                            <title>LinkedIn</title>
+                            <g>
+                                <path d="M34,2.5v29A2.5,2.5,0,0,1,31.5,34H2.5A2.5,2.5,0,0,1,0,31.5V2.5A2.5,2.5,0,0,1,2.5,0h29A2.5,2.5,0,0,1,34,2.5ZM10,13H5V29h5Zm.45-5.5A2.88,2.88,0,0,0,7.59,4.6H7.5a2.9,2.9,0,0,0,0,5.8h0a2.88,2.88,0,0,0,2.95-2.81ZM29,19.28c0-4.81-3.06-6.68-6.1-6.68a5.7,5.7,0,0,0-5.06,2.58H17.7V13H13V29h5V20.49a3.32,3.32,0,0,1,3-3.58h.19c1.59,0,2.77,1,2.77,3.52V29h5Z" fill="currentColor"></path>
+                            </g>
+                        </svg>
+                        Feito por Gustavo Bigardi
+                    </NavLink>
+                </li>
+            </ul>
+        }
+    </nav>
+</div>
+
+@code {
+    AuthState AuthState => GetState<AuthState>();
+
+    private string _navLinksClass = "";
+    private string _linksClass = "";
+    private string _hamburgerClass = "";
+
+    private void CloseMenu()
+    {
+        _navLinksClass = "";
+        _linksClass = "";
+        _hamburgerClass = "";
+    }
+
+    private void ToggleMenu()
+    {
+        _navLinksClass = string.IsNullOrWhiteSpace(_navLinksClass) ? "open" : "";
+        _linksClass = string.IsNullOrWhiteSpace(_linksClass) ? "fade" : "";
+        _hamburgerClass = string.IsNullOrWhiteSpace(_hamburgerClass) ? "toggle" : "";
+    }
+
+    private void RedirectToLinkedin()
+    {
+        Navigation.NavigateTo(Configuration.GetLoginUrl());
+    }
+
+    private async Task Logout()
+    {
+        await Mediator.Send(new AuthState.LogoutAction());
+        Navigation.NavigateTo("/");
+    }
+
+    private bool IsAdmin()
+    {
+        return "admin".Equals(AuthState.Role, StringComparison.InvariantCultureIgnoreCase);
+    }
+}

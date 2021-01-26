@@ -1,0 +1,112 @@
+﻿.speech-title {
+    display: flex;
+    background: rgba(240, 47, 55, 0.6);
+    color: #fff;
+    padding: 20px 10px;
+    justify-content: flex-start;
+}
+
+    .speech-title h1 {
+        font-size: 26px;
+        color: #fff;
+    }
+
+.speech-description {
+    display: flex;
+    background: rgba(240, 47, 55, 0.6);
+    color: #fff;
+    margin-top: 10px;
+    padding: 20px 10px;
+    justify-content: flex-start;
+}
+
+    .speech-description .speakers {
+        padding: 0 15px;
+        display: flex;
+        flex-direction: row;
+    }
+
+    .speech-description .description {
+        padding: 0 15px;
+    }
+
+        .speech-description .description h3 {
+            text-align: justify;
+            font-size: 20px;
+            font-weight: 500;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .speech-description .description p {
+            text-align: justify;
+            font-size: 18px;
+            color: #fff;
+        }
+
+.speaker-picture {
+    width: 160px;
+    height: 160px;
+    background-size: cover;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    margin: 0 8px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+    .speaker-picture p {
+        color: #fff;
+        background: rgba(0, 0, 0, 0.4);
+        width: 100%;
+        text-align: center;
+    }
+
+.speech-controls {
+    display: flex;
+    background: rgba(240, 47, 55, 0.6);
+    color: #fff;
+    padding: 20px 10px;
+    justify-content: space-evenly;
+    margin-top: 10px;
+}
+
+    .speech-controls .control {
+        display: flex;
+        align-items: center;
+    }
+
+        .speech-controls .control button {
+            border: none;
+            outline: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            color: #fff;
+        }
+
+            .speech-controls .control button.btn-play {
+                background: rgba(36, 33, 109, 0.70);
+            }
+
+            .speech-controls .control button.btn-remove {
+                background: rgba(124, 32, 32, 0.70);
+            }
+
+        .speech-controls .control p {
+            font-size: 16px;
+            color: #fff;
+        }
+
+@media screen and (max-width: 800px) {
+    .speech-description {
+        flex-direction: column-reverse;
+    }
+
+    .speakers {
+        margin-top: 30px;
+    }
+
+    .speaker-picture {
+        margin: 0 8px 0 0;
+    }
+}

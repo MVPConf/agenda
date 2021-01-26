@@ -1,0 +1,55 @@
+﻿@using Agenda.Features.Feedback 
+
+@inject HttpClient HttpClient
+
+@inherits BlazorStateComponent
+
+<EditForm Model="@feedback" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <p>
+        <label for="notaPalestra">Que nota você atribui ao conteúdo desta palestra?</label><br />
+        <InputRadioGroup id="notaPalestra" @bind-Value="feedback.SpeechEvaluationScore">
+            @for (int i = 1; i <= 10; i++)
+            {
+                <InputRadio Value="@i" /> @i
+            }
+        </InputRadioGroup>
+    </p>
+    <p>
+        <label for="notaPalestrante">Que nota você atribui ao palestrante, em sua apresentação e comportamento?</label><br />
+        <InputRadioGroup id="notaPalestrante" @bind-Value="feedback.SpeakerEvaluationScore">
+            @for (int i = 1; i <= 10; i++)
+            {
+                <InputRadio Value="@i" /> @i
+            }
+        </InputRadioGroup>
+    </p>
+    <p>
+        <label for="notes">Comentários (até 2000 caracteres):</label><br />
+        <InputTextArea id="notes" @bind-Value="feedback.Notes" maxlength="2000" />
+    </p>
+    <p style="text-align: right; width: 100%;">
+        <button type="submit" class="btn btn-primary" disabled="@State.Loading">@(State.Loading ? "Processando..." : "Enviar Feedback")</button>
+    </p>
+</EditForm>
+
+@code {
+    FeedbackState State => GetState<FeedbackState>();
+
+    [CascadingParameter]
+    BlazoredModalInstance BlazoredModal { get; set; }
+
+    [Parameter]
+    public int SpeechId { get; set; }
+
+    private CreateFeedback feedback = new CreateFeedback();
+
+    private async Task HandleValidSubmit()
+    {
+        feedback.SpeechId = SpeechId;
+        await Mediator.Send(new FeedbackState.CreateFeedbackAction(feedback));
+        await BlazoredModal.Close(ModalResult.Ok($"Form was submitted successfully."));
+    }
+}

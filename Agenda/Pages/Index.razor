@@ -1,0 +1,56 @@
+﻿@page "/"
+
+@using BlazorState
+@using Agenda.Features.Authentication
+@using Agenda.Components.Winners
+
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+@inject ConfigurationService Configuration
+@inject HttpClient HttpClient
+
+@inherits BlazorStateComponent
+
+@inject IModalService Modal
+
+<div class="index-container">
+    <h1 style="color: #444;">Bem vindo ao MVP Conf 2020@(string.IsNullOrWhiteSpace(AuthState.Name) ? "" : " " + AuthState.Name)!</h1>
+    @if (!string.IsNullOrWhiteSpace(AuthState.ErrorMessage))
+    {
+        <h1 style="color: #bf2525;">Não foi possível realizar login.</h1>
+        <p style="text-align: center; color: #bf2525; font-weight:500; padding-bottom: 30px;">
+            @((MarkupString)AuthState.ErrorMessage)
+        </p>
+    }
+
+    @if (!AuthState.LoggedIn)
+    {
+        <a class="login-link" href="@Configuration.GetLoginUrl()"><img src="/images/signin-button.png" /></a>
+    }
+</div>
+
+@code {
+    AuthState AuthState => GetState<AuthState>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState.LoggedIn)
+        {
+            try
+            {
+                WinnerResponse response = await HttpClient.GetFromJsonAsync<WinnerResponse>("raffle/check");
+                if (response != null && response.Winner)
+                {
+                    Modal.Show<Winner>("Ganhador!", new ModalOptions()
+                    {
+                        Animation = ModalAnimation.FadeInOut(0.5),
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+    }
+}

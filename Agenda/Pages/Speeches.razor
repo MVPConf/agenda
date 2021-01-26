@@ -1,0 +1,27 @@
+﻿@page "/speeches/{SpeechId:int?}"
+
+@using Agenda.Components.SpeechDetail
+@using Agenda.Components.SpeechSearch
+
+@inherits BlazorStateComponent
+
+@attribute [Authorize]
+
+<div>
+    @if (SpeechId > 0)
+    {
+        <h1>Detalhes da Palestra</h1>
+        <SpeechDetail SpeechId="@SpeechId" />
+    }
+    else
+    {
+        <h1>Grade Completa</h1>
+        <SpeechSearch />
+
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int SpeechId { get; set; }
+}

@@ -1,0 +1,97 @@
+﻿.schedule-slot {
+    padding: 5px 0;
+    margin: 0 10px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+    .schedule-slot:last-child {
+        border-bottom: none;
+    }
+
+    .schedule-slot .slot-time {
+        color: #fff;
+        font-size: 15px;
+        padding: 0 10px;
+        text-align: left;
+    }
+
+    .schedule-slot .slot-content {
+        display: flex;
+        min-height: 80px;
+        width: 100%;
+        padding: 8px;
+        flex-direction: column;
+        justify-content: space-evenly;
+    }
+
+        .schedule-slot .slot-content.active {
+            border: solid 3px #f42e4b;
+            background: rgba(244, 46, 75, 0.3);
+        }
+
+        .schedule-slot .slot-content h1 {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .schedule-slot .slot-content h3 {
+            font-size: 15px;
+            color: #fff;
+            margin-right: 20px;
+            font-style: italic;
+        }
+
+        .schedule-slot .slot-content p {
+            font-size: 13px;
+            color: #fff;
+        }
+
+    .schedule-slot .slot-actions {
+        display: flex;
+        align-items: center;
+        padding: 0 15px
+    }
+
+        .schedule-slot .slot-actions a {
+            display: flex;
+        }
+
+            .schedule-slot .slot-actions a img {
+                filter: invert(1);
+            }
+
+.slot-info-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+@media screen and (min-width: 601px) {
+    .schedule-slot .slot-content h1 {
+        color: #fff;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .schedule-slot .slot-content h3 {
+        font-size: 15px;
+        color: #fff;
+    }
+
+    .slot-info-group {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        width: 100%;
+    }
+
+    .schedule-slot .slot-time {
+        color: #fff;
+        font-size: 15px;
+        padding: 0 10px;
+        text-align: center;
+    }
+}

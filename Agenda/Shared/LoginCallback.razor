@@ -1,0 +1,29 @@
+﻿@page "/login/linkedin/callback"
+
+@using Microsoft.AspNetCore.WebUtilities
+@using BlazorState
+@using Agenda.Features.Authentication
+
+@inject NavigationManager Navigation
+@inject HttpClient HttpClient
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+
+@inherits BlazorStateComponent
+
+<div class="loading-login">
+    <img class="loading-mvp" src="images/logomvp.gif" alt="Logo.gif" />
+</div>
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        var query = new Uri(Navigation.Uri).Query;
+
+        if (QueryHelpers.ParseQuery(query).TryGetValue("code", out var code))
+        {
+            await Mediator.Send(new AuthState.LoginAction(code));
+            Navigation.NavigateTo("/");
+        }
+    }
+}

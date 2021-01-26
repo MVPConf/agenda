@@ -1,0 +1,62 @@
+﻿@page "/schedule"
+
+@using Agenda.Features.Schedule
+@using Agenda.Components.Tab
+@using Agenda.Components.ScheduleSlot
+
+@inherits BlazorStateComponent
+
+@attribute [Authorize]
+
+<div>
+    <h1>Minha Agenda</h1>
+    @if (State.Loading)
+    {
+        <h2>Carregando</h2>
+    }
+    else
+    {
+        <TabControl>
+            @foreach (DateTime date in GetTabDates())
+            {
+                <TabPage @key="@date.Ticks" Text="@date.ToString("dd/MM/yyyy")">
+                    @foreach (Slot slot in GetSlotsForDate(date).OrderBy(s => s.Time))
+                    {
+                        <ScheduleSlot Slot="@slot" />
+                    }
+                </TabPage>
+            }
+        </TabControl>
+    }
+</div>
+
+@code {
+    ScheduleState State => GetState<ScheduleState>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchUserSchedule();
+    }
+
+    private async Task FetchUserSchedule()
+    {
+        await Mediator.Send(new ScheduleState.FetchUserScheduleAction());
+    }
+
+    private List<DateTime> GetTabDates()
+    {
+        return State.Schedule.Slots
+            .Where(s => s.Time != DateTime.MinValue)
+            .Select(s => s.Time.Date)
+            .Distinct()
+            .OrderBy(d => d)
+            .ToList();
+    }
+
+    private List<Slot> GetSlotsForDate(DateTime date)
+    {
+        return State.Schedule.Slots
+            .Where(s => s.Time.Date == date.Date)
+            .ToList();
+    }
+}

@@ -1,0 +1,22 @@
+﻿@using BlazorState
+@using Agenda.Features.Authentication
+
+@inherits BlazorStateComponent
+
+@if (!string.IsNullOrWhiteSpace(AuthState.StreamUser))
+{
+    <div style="text-align: center;" class="banner">
+        <h3>Como participante com ingresso Premium, as gravações estão disponíveis através da agenda ou da grade completa a partir de <strong>19/12/2020</strong>.</h3>
+        <h3>Você será direcionado a plataforma do Microsoft Stream, e geramos um login para você:</h3>
+
+        <ul>
+            <li><strong>Login</strong>: @AuthState.StreamUser</li>
+            <li><strong>Senha</strong>: @AuthState.StreamPass</li>
+        </ul>
+
+    </div>
+}
+
+@code {
+    AuthState AuthState => GetState<AuthState>();
+}

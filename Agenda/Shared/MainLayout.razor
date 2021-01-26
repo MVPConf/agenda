@@ -1,0 +1,19 @@
+﻿@using Blazored.Toast.Configuration
+@using Agenda.Components.Banner
+
+@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="main">
+        <NavMenu />
+        <div class="content">
+            <Banner />
+            @Body
+        </div>
+    </div>
+</div>
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="10"
+                RemoveToastsOnNavigation="true"
+                ShowProgressBar="true" />

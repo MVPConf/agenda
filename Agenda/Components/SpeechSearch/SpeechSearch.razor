@@ -1,0 +1,260 @@
+﻿@using System.Timers;
+@using Agenda.Extensions
+@using Agenda.Features.Schedule
+@using Agenda.Features.Speeches
+
+@inject NavigationManager NavManager
+
+@inherits BlazorStateComponent
+
+@if (SpeechState.Loading)
+{
+    <h1>Carregando</h1>
+}
+else
+{
+    <div class="search-filters">
+        <div class="drop-filters">
+            <div class="filter">
+                <label for="track">Trilha</label>
+                <select id="track" @onchange="TrackFilterChanged">
+                    <option value="" selected="@string.IsNullOrWhiteSpace(SelectedTrack)">TODAS</option>
+                    @foreach (string track in FilteredTracks())
+                    {
+                        <option value="@track" selected="@(track == SelectedTrack)">@track.ToUpper()</option>
+                    }
+                </select>
+            </div>
+            <div class="filter">
+                <label for="speaker">Palestrante</label>
+                <select id="speaker" @onchange="SpeakerFilterChanged">
+                    <option value="" selected="@string.IsNullOrWhiteSpace(SelectedSpeaker)">TODOS(AS)</option>
+                    @foreach (string speaker in FilteredSpeakers())
+                    {
+                        <option value="@speaker" selected="@(speaker == SelectedSpeaker)">@speaker.ToUpper()</option>
+                    }
+                </select>
+            </div>
+            <div class="filter">
+                <label for="date">Data</label>
+                <select id="date" @onchange="DateFilterChanged">
+                    <option value="" selected="@string.IsNullOrWhiteSpace(SelectedDate)">TODAS</option>
+                    @foreach (string date in FilteredDates())
+                    {
+                        <option value="@date" selected="@(date == SelectedDate)">@date.ToUpper()</option>
+                    }
+                </select>
+            </div>
+            <div class="filter">
+                <label for="date">Horário</label>
+                <select id="date" @onchange="HourFilterChanged">
+                    <option value="" selected="@string.IsNullOrWhiteSpace(SelectedHour)">TODOS</option>
+                    @foreach (string hour in FilteredHours())
+                    {
+                        <option value="@hour" selected="@(hour == SelectedHour)">@hour.ToUpper()</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="text-filters">
+            <div class="filter filter-text">
+                <label for="searchText">Pequisar por texto</label>
+                <input type="text" id="searchText" @bind-value="PreSearchText" placeholder="Informe termos para pesquisar..." @bind-value:event="oninput"
+                       @onkeyup="HandleKeyUp" />
+            </div>
+        </div>
+        <div class="clean-filters">
+            <div class="filter clean-filter">
+                <button type="button" class="btn-clean-filters" @onclick="CleanFilters">LIMPAR FILTROS</button>
+            </div>
+        </div>
+    </div>
+    <div class="speach-list">
+        @foreach (var speech in FilteredSpeeches())
+        {
+            <SpeachSearchItem Slot="@(new Slot() { Speech = speech, Time = DateTime.ParseExact(speech.Schedule, "dd/MM/yyyy HH':'mm", null) })"
+                              IsInSchedule="@IsSpeechInSchedule(speech)"
+                              HasScheduleInSameTime="@IsSpeechWithTimeScheduled(speech)" />
+        }
+    </div>
+}
+
+@code {
+    ScheduleState ScheduleState => GetState<ScheduleState>();
+
+    SpeechState SpeechState => GetState<SpeechState>();
+
+    String SelectedTrack = "";
+
+    String SelectedSpeaker = "";
+
+    String SelectedDate = "";
+
+    String SelectedHour = "";
+
+    String SearchText = "";
+
+    String PreSearchText = "";
+
+    private Timer aTimer;
+
+    protected override bool ShouldRender()
+    {
+        return SearchText == PreSearchText;
+    }
+
+    protected override void OnInitialized()
+    {
+        SpeechState.Initialize();
+        string date = "";
+        NavManager.TryGetQueryString<string>("date", out date);
+
+        if (!string.IsNullOrWhiteSpace(date))
+        {
+            var dateParameter = DateTime.ParseExact(date, "ddMMyyyyHHmm", null);
+            SelectedDate = dateParameter.ToString("dd/MM/yyyy");
+            SelectedHour = dateParameter.ToString("HH':'mm");
+        }
+
+        Mediator.Send(new ScheduleState.FetchUserScheduleAction());
+        Mediator.Send(new SpeechState.FetchSpeechesAction());
+
+        aTimer = new System.Timers.Timer(500);
+        aTimer.Elapsed += OnUserFinish;
+        aTimer.AutoReset = false;
+    }
+
+    void HandleKeyUp(KeyboardEventArgs e)
+    {
+        // remove previous one
+        aTimer.Stop();
+
+        // new timer
+        aTimer.Start();
+    }
+
+    private void OnUserFinish(Object source, ElapsedEventArgs e)
+    {
+        InvokeAsync(() =>
+        {
+            SearchText = PreSearchText;
+            StateHasChanged();
+        });
+    }
+
+    private List<Speech> FilteredSpeeches()
+    {
+        return SpeechState
+            .Speeches
+            .Where(x => x.Track.Equals(SelectedTrack, StringComparison.CurrentCultureIgnoreCase) || string.IsNullOrWhiteSpace(SelectedTrack))
+            .Where(x => x.Speakers.Contains(SelectedSpeaker) || string.IsNullOrWhiteSpace(SelectedSpeaker))
+            .Where(x => x.Schedule.Split(" ").FirstOrDefault() == SelectedDate || string.IsNullOrWhiteSpace(SelectedDate))
+            .Where(x => x.Schedule.Split(" ").ElementAt(1) == SelectedHour || string.IsNullOrWhiteSpace(SelectedHour))
+            .Where(x => (x.Title.IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0 || x.Description.IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0 || string.Join(", ", x.Speakers).IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0) || string.IsNullOrWhiteSpace(SearchText))
+            .OrderBy(x => x.Schedule)
+            .ThenBy(x => x.Title)
+            .ThenBy(x => string.Join(", ", x.Speakers))
+            .ToList();
+    }
+
+    private List<string> FilteredTracks()
+    {
+        return SpeechState
+            .Speeches
+            .Where(x => x.Speakers.Contains(SelectedSpeaker) || string.IsNullOrWhiteSpace(SelectedSpeaker))
+            .Where(x => x.Schedule.Split(" ").FirstOrDefault() == SelectedDate || string.IsNullOrWhiteSpace(SelectedDate))
+            .Where(x => x.Schedule.Split(" ").ElementAt(1) == SelectedHour || string.IsNullOrWhiteSpace(SelectedHour))
+            .Where(x => (x.Title.IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0 || x.Description.IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0 || string.Join(", ", x.Speakers).IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0) || string.IsNullOrWhiteSpace(SearchText))
+            .Select(s => s.Track)
+            .Distinct()
+            .OrderBy(s => s)
+            .ToList();
+    }
+
+    private List<string> FilteredSpeakers()
+    {
+        return SpeechState
+            .Speeches
+            .Where(x => x.Track.Equals(SelectedTrack, StringComparison.CurrentCultureIgnoreCase) || string.IsNullOrWhiteSpace(SelectedTrack))
+            .Where(x => x.Schedule.Split(" ").FirstOrDefault() == SelectedDate || string.IsNullOrWhiteSpace(SelectedDate))
+            .Where(x => x.Schedule.Split(" ").ElementAt(1) == SelectedHour || string.IsNullOrWhiteSpace(SelectedHour))
+            .Where(x => (x.Title.IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0 || x.Description.IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0 || string.Join(", ", x.Speakers).IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0) || string.IsNullOrWhiteSpace(SearchText))
+            .Select(s => s.Speakers)
+            .SelectMany(s => s)
+            .Distinct()
+            .OrderBy(s => s)
+            .ToList();
+    }
+
+    private List<string> FilteredDates()
+    {
+        return SpeechState
+            .Speeches
+            .Where(x => x.Track.Equals(SelectedTrack, StringComparison.CurrentCultureIgnoreCase) || string.IsNullOrWhiteSpace(SelectedTrack))
+            .Where(x => x.Speakers.Contains(SelectedSpeaker) || string.IsNullOrWhiteSpace(SelectedSpeaker))
+            .Where(x => x.Schedule.Split(" ").ElementAt(1) == SelectedHour || string.IsNullOrWhiteSpace(SelectedHour))
+            .Where(x => (x.Title.IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0 || x.Description.IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0 || string.Join(", ", x.Speakers).IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0) || string.IsNullOrWhiteSpace(SearchText))
+            .Select(s => s.Schedule.Split(" ").FirstOrDefault())
+            .Distinct()
+            .OrderBy(s => s)
+            .ToList();
+    }
+
+    private List<string> FilteredHours()
+    {
+        return SpeechState
+            .Speeches
+            .Where(x => x.Track.Equals(SelectedTrack, StringComparison.CurrentCultureIgnoreCase) || string.IsNullOrWhiteSpace(SelectedTrack))
+            .Where(x => x.Speakers.Contains(SelectedSpeaker) || string.IsNullOrWhiteSpace(SelectedSpeaker))
+            .Where(x => x.Schedule.Split(" ").FirstOrDefault() == SelectedDate || string.IsNullOrWhiteSpace(SelectedDate))
+            .Where(x => (x.Title.IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0 || x.Description.IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0 || string.Join(", ", x.Speakers).IndexOf(SearchText, StringComparison.CurrentCultureIgnoreCase) >= 0) || string.IsNullOrWhiteSpace(SearchText))
+            .Select(s => s.Schedule.Split(" ").ElementAt(1))
+            .Distinct()
+            .OrderBy(s => s)
+            .ToList();
+    }
+
+    private void TrackFilterChanged(ChangeEventArgs e)
+    {
+        SelectedTrack = e.Value.ToString();
+        StateHasChanged();
+    }
+
+    private void SpeakerFilterChanged(ChangeEventArgs e)
+    {
+        SelectedSpeaker = e.Value.ToString();
+        StateHasChanged();
+    }
+
+    private void DateFilterChanged(ChangeEventArgs e)
+    {
+        SelectedDate = e.Value.ToString();
+        StateHasChanged();
+    }
+
+    private void HourFilterChanged(ChangeEventArgs e)
+    {
+        SelectedHour = e.Value.ToString();
+        StateHasChanged();
+    }
+
+    private void CleanFilters()
+    {
+        SelectedDate = "";
+        SelectedHour = "";
+        SelectedSpeaker = "";
+        SelectedTrack = "";
+        PreSearchText = "";
+        SearchText = "";
+    }
+
+    private bool IsSpeechInSchedule(Speech speech)
+    {
+        return ScheduleState.Schedule.Slots.Any(s => s.Speech != null && s.Speech.Id == speech.Id);
+    }
+
+    private bool IsSpeechWithTimeScheduled(Speech speech)
+    {
+        return ScheduleState.Schedule.Slots.Any(s => s.Time.ToString("dd/MM/yyyy HH':'mm") == speech.Schedule && s.Speech != null);
+    }
+}

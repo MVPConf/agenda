@@ -1,0 +1,120 @@
+﻿
+@using BlazorState
+@using Agenda.Features.Schedule
+@using Agenda.Components.ScheduleModal
+
+@inject NavigationManager NavManager
+@inject IModalService Modal
+@inject IToastService toastService
+@inject IJSRuntime JSRuntime
+
+@inherits BlazorStateComponent
+
+<div class="schedule-slot">
+    <div class="slot-info-group">
+        <div class="slot-time">@Slot.Time.ToString("dd/MM/yyyy HH':'mm")</div>
+        <div class="slot-content">
+            @if (Slot.Speech != null)
+            {
+                <h1>@Slot.Speech.Title</h1>
+                <h3 style="font-weight: 500;">@Slot.Speech.Track</h3>
+                <h3>@GetSpeakersInLine(Slot.Speech.Speakers)</h3>
+                <p>@Slot.Speech.Description</p>
+            }
+        </div>
+    </div>
+    <div class="slot-actions">
+        @if (Slot.Speech != null)
+        {
+            var url = $"/speeches/{Slot.Speech.Id}";
+
+            <NavLink href="@url">
+                <img src="/images/information.svg" width="24" />
+            </NavLink>
+            @if (!IsInSchedule)
+            {
+                <NavLink style="cursor: pointer; margin-left: 20px;" @onclick="Schedule">
+                    <img src="/images/add.svg" width="24" />
+                </NavLink>
+            }
+            <NavLink style="cursor: pointer; margin-left: 20px;" @onclick="Watch">
+                <img src="/images/play.png" width="24" />
+            </NavLink>
+        }
+        else
+        {
+            var url = $"/speeches?date={Slot.Time.ToString("ddMMyyyyHHmm")}";
+
+            <NavLink href="@url">
+                <img src="/images/add.svg" width="24" />
+            </NavLink>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Slot Slot { get; set; }
+
+    [Parameter]
+    public bool IsInSchedule { get; set; }
+
+    [Parameter]
+    public bool HasScheduleInSameTime { get; set; }
+
+    private string GetEmptyClass(Slot slot)
+    {
+        return slot.Speech == null ? "empty" : "null";
+    }
+
+    private string GetActiveClass(Slot slot)
+    {
+        return DateTime.Now.Hour == Slot.Time.Hour ? "active" : null;
+    }
+
+    private string GetSpeakersInLine(List<string> speakers)
+    {
+        return string.Join(", ", speakers);
+    }
+
+    private async Task Schedule()
+    {
+        if (Slot != null && Slot.Speech != null)
+        {
+            if (HasScheduleInSameTime)
+            {
+                var modalRef = Modal.Show<ScheduleModal>("Confirmação", new ModalOptions()
+                {
+                    Animation = ModalAnimation.FadeInOut(0.5),
+                    HideCloseButton = true
+                });
+
+                var result = await modalRef.Result;
+
+                if (!result.Cancelled)
+                {
+                    await Mediator.Send(new ScheduleState.ScheduleSpeechAction(Slot.Speech.Id));
+                    toastService.ShowSuccess("Palestra agendada com sucesso!", "Palestra agendada");
+                }
+            }
+            else
+            {
+                await Mediator.Send(new ScheduleState.ScheduleSpeechAction(Slot.Speech.Id));
+                toastService.ShowSuccess("Palestra agendada com sucesso!", "Palestra agendada");
+            }
+        }
+    }
+
+    private async Task Watch()
+    {
+        if (Slot.Speech == null)
+            return;
+
+        var url = string.IsNullOrWhiteSpace(Slot.Speech.LinkUrl) ? Slot.Speech.JoinUrl : Slot.Speech.LinkUrl;
+
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            await JSRuntime.InvokeVoidAsync("open", url, "_blank");
+        }
+    }
+}

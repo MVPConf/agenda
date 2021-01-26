@@ -1,0 +1,19 @@
+﻿<p style="margin-bottom: 30px;">Você já possui uma palestra agendada para o horário selecionado. Remova o agendamento antes de realizar um novo.</p>
+
+<button @onclick="SubmitForm" class="btn btn-primary" style="float: right; margin-left: 20px;">Agendar</button>
+<button @onclick="Cancel" class="btn btn-secondary" style="float: right;">Cancelar</button>
+
+@code {
+    [CascadingParameter]
+    BlazoredModalInstance BlazoredModal { get; set; }
+
+    void SubmitForm()
+    {
+        BlazoredModal.Close(ModalResult.Ok($"Form was submitted successfully."));
+    }
+
+    void Cancel()
+    {
+        BlazoredModal.Cancel();
+    }
+} 

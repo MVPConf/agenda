@@ -1,0 +1,93 @@
+﻿@using BlazorState
+@using Agenda.Components.Feedback
+
+@inject IJSRuntime JSRuntime
+@inject IModalService Modal
+
+@inherits BlazorStateComponent
+
+<div class="schedule-slot">
+    <div class="slot-info-group">
+        <div class="slot-time">@Slot.Time.ToString("HH':'mm")</div>
+        <div class="slot-content">
+            @if (Slot.Speech != null)
+            {
+                <h1>@Slot.Speech.Title</h1>
+                <h3 style="font-weight: 500;">@Slot.Speech.Track</h3>
+                <h3>@GetSpeakersInLine(Slot.Speech.Speakers)</h3>
+                <p>@Slot.Speech.Description</p>
+            }
+        </div>
+    </div>
+    <div class="slot-actions">
+        @if (Slot.Speech != null)
+        {
+            var url = $"/speeches/{Slot.Speech.Id}";
+
+            <NavLink href="@url">
+                <img src="/images/information.svg" width="24" />
+            </NavLink>
+
+            <NavLink style="cursor: pointer; margin-left: 20px;" @onclick="Watch">
+                <img src="/images/play.png" width="24" />
+            </NavLink>
+
+            <NavLink style="cursor: pointer; margin-left: 20px;" @onclick="Feedback">
+                <img src="/images/feedback.svg" width="24" />
+            </NavLink>
+        }
+        else
+        {
+            var url = $"/speeches?date={Slot.Time.ToString("ddMMyyyyHHmm")}";
+
+            <NavLink href="@url">
+                <img src="/images/add.svg" width="24" />
+            </NavLink>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Slot Slot { get; set; }
+
+    private string GetEmptyClass(Slot slot)
+    {
+        return slot.Speech == null ? "empty" : "null";
+    }
+
+    private string GetActiveClass(Slot slot)
+    {
+        return DateTime.Now.Hour == Slot.Time.Hour ? "active" : null;
+    }
+
+    private string GetSpeakersInLine(List<string> speakers)
+    {
+        return string.Join(", ", speakers);
+    }
+
+    private async Task Watch()
+    {
+        if (Slot.Speech == null)
+            return;
+
+        var url = string.IsNullOrWhiteSpace(Slot.Speech.LinkUrl) ? Slot.Speech.JoinUrl : Slot.Speech.LinkUrl;
+
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            await JSRuntime.InvokeVoidAsync("open", url, "_blank");
+        }
+    }
+
+    private void Feedback()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add("SpeechId", Slot.Speech.Id);
+
+        var modalRef = Modal.Show<FeedbackForm>("Feedback", parameters, new ModalOptions()
+        {
+            Animation = ModalAnimation.FadeInOut(0.5),
+            HideCloseButton = true
+        });
+    }
+}

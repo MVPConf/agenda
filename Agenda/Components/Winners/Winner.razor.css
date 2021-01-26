@@ -1,0 +1,29 @@
+﻿h1 {
+    font-size: 22px;
+    text-align: center;
+    font-weight: bold;
+    padding-bottom: 20px;
+}
+
+h3 {
+    font-size: 18px;
+}
+
+img {
+    width: 100%;
+    padding: 30px 0;
+    max-width: 500px;
+}
+
+.winner-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+span {
+    font-size: 22px;
+    color: rgb(244, 46, 75);
+    font-weight: bold;
+}
